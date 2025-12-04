@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>段考成績查詢系統</title>
+    
+    <link rel="stylesheet" href="style.css"> 
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div id="app">
+        <h1>成績查詢系統</h1>
+
+        <div id="login-container">
+            <h2>學生登入</h2>
+            <form id="login-form">
+                <p>請輸入您的帳號 (Email/學號) 和密碼：</p>
+                <input type="email" id="email" placeholder="學號/Email" required><br>
+                <input type="password" id="password" placeholder="密碼" required><br>
+                <button type="submit">登入查詢</button>
+                <p id="error-message"></p>
+            </form>
+        </div>
+
+        <div id="scores-view" style="display: none;">
+            <p class="welcome-msg">歡迎您，<span id="welcome-user"></span>！</p>
+            <h3>您的成績單</h3>
+            
+            <div id="table-container">
+                <table id="scores-table">
+                    <thead>
+                        <tr><th>段考名稱</th><th>科目</th><th>分數</th></tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+            
+            <button id="logout-button">登出系統</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
