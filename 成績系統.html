@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人化成績查詢系統 (模擬登入)</title>
+    <style>
+        /* 基礎 CSS 樣式 */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow-x: auto; }
+        h1 { text-align: center; color: #333; }
+        /* 登入表單樣式 */
+        #loginForm { 
+            max-width: 400px; margin: 50px auto; padding: 30px; border: 1px solid #ccc; border-radius: 8px; 
+            background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #loginForm input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        #loginForm button { width: 100%; padding: 10px; background-color: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        #loginForm button:hover { background-color: #27ae60; }
+        #loginMessage { color: red; text-align: center; margin-top: 10px; }
+        /* 成績表格樣式 */
+        #scoreDisplay { display: none; } /* 預設隱藏成績頁面 */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; min-width: 1000px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; white-space: nowrap; }
+        th { background-color: #2980b9; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        tr:hover { background-color: #ddd; }
+        .sensitive-data { color: #CC0000; font-weight: bold; }
+        .progress-up { color: green; font-weight: bold; }
+        .progress-down { color: red; }
+    </style>
+</head>
+<body>
+
+<div id="loginForm">
+    <h1>👤 學生個人成績查詢</h1>
+    <input type="text" id="username" placeholder="請輸入帳號 (Account)">
+    <input type="password" id="password" placeholder="請輸入密碼 (Password)">
+    <button onclick="handleLogin()">登入查詢</button>
+    <p id="loginMessage"></p>
+    <p style="font-size: 12px; margin-top: 20px; color: gray;">
+        **提示：** 請使用 `ALL_SCORES` 內的帳號密碼進行測試。
+    </p>
+</div>
+
+<div class="container" id="scoreDisplay">
+    <h1 id="welcomeMessage"></h1>
+    
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button onclick="logout()" style="padding: 8px 15px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">登出</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>班級</th><th>帳號</th><th>姓&nbsp;&nbsp;&nbsp;名</th><th>密碼</th>
+                <th>國文</th><th>英文</th><th>數學</th><th>自然</th><th>社會</th>
+                <th>校排</th><th>平均</th><th>總分</th><th>名次</th>
+                <th>前次總分</th><th>進步幾分</th>
+            </tr>
+        </thead>
+        <tbody id="scoreTableBody">
+            </tbody>
+    </table>
+    
+    <p style="margin-top: 20px; color: gray;">
+        **您已登入：** 此處僅顯示您的個人成績。
+    </p>
+</div>
+
+<script>
+    // ==========================================================
+    // 🎯 您的成績資料 (所有資料都存於此，用於模擬驗證)
+    // ==========================================================
+    const ALL_SCORES = [
+        { class: '707', account: 'qp1140701', name: '王子濬', password: 'k1IMp7', chinese: 92, english: 100, math: 87, science: 96.5, social: 94, rank_school: 27, average: 94, total: 470, ranking: 1, prev_total: '一段無', progress: 470 },
+        { class: '707', account: 'qp1140702', name: '何宥弘', password: '5ZbEbb', chinese: 78, english: 92, math: 58, science: 90, social: 72, rank_school: 248, average: 78, total: 390, ranking: 20, prev_total: '一段無', progress: 390 },
+        { class: '707', account: 'qp1140703', name: '吳慕祈', password: '9QfdSm', chinese: 38, english: 20, math: 16, science: 73, social: 44, rank_school: 427, average: 38, total: 191, ranking: 31, prev_total: '一段無', progress: 191 },
+        { class: '707', account: 'qp1140704', name: '呂品澄', password: 'e5xQS5', chinese: 68, english: 89, math: 60, science: 71, social: 60, rank_school: 323, average: 70, total: 348, ranking: 24, prev_total: '一段無', progress: 348 },
+        { class: '707', account: 'qp1140705', name: '李悅誠', password: 'IK5zCz', chinese: 80, english: 97, math: 67, science: 86.5, social: 94, rank_school: 163, average: 85, total: 425, ranking: 9, prev_total: '一段無', progress: 425 },
+        { class: '707', account: 'qp1140706', name: '袁明應', password: 'i2Kqpn', chinese: 52.5, english: 36, math: 29, science: 77, social: 52, rank_school: 411, average: 49, total: 247, ranking: 29, prev_total: '一段無', progress: 247 },
+        { class: '707', account: 'qp1140707', name: '郭承奕', password: 'gtc746', chinese: 86.5, english: 83, math: 55, science: 91, social: 86, rank_school: 223, average: 80, total: 402, ranking: 18, prev_total: '一段無', progress: 402 },
+        { class: '707', account: 'qp1140708', name: '陳紘紳', password: 'UNYrVi', chinese: 89, english: 98, math: 71, science: 82, social: 62, rank_school: 225, average: 80, total: 402, ranking: 17, prev_total: '一段無', progress: 402 },
+        { class: '707', account: 'qp1140709', name: '陳櫂銘', password: '6BKBhK', chinese: 39, english: 63, math: 56, science: 88.5, social: 58, rank_school: 368, average: 61, total: 305, ranking: 27, prev_total: '一段無', progress: 305 },
+        { class: '707', account: 'qp1140710', name: '彭宥盛', password: 'kYuFj9', chinese: 92, english: 94, math: 92, science: 93.5, social: 90, rank_school: 57, average: 92, total: 462, ranking: 5, prev_total: '一段無', progress: 462 },
+        { class: '707', account: 'qp1140711', name: '曾晨熙', password: 'hdJ1s6', chinese: 68.5, english: 84, math: 61, science: 93.5, social: 76, rank_school: 268, average: 77, total: 383, ranking: 22, prev_total: '一段無', progress: 383 },
+        { class: '707', account: 'qp1140712', name: '董瑞德', password: 'dbbjdI', chinese: 80, english: 95, math: 95, science: 93, social: 86, rank_school: 95, average: 90, total: 449, ranking: 7, prev_total: '一段無', progress: 449 },
+        { class: '707', account: 'qp1140713', name: '詹竤安', password: 'OcvzGU', chinese: 64, english: 85, math: 72, science: 90, social: 78, rank_school: 250, average: 78, total: 389, ranking: 21, prev_total: '一段無', progress: 389 },
+        { class: '707', account: 'qp1140714', name: '劉裕翔', password: 'dlHVWd', chinese: 87, english: 98, math: 65, science: 94.5, social: 76, rank_school: 174, average: 84, total: 421, ranking: 12, prev_total: '一段無', progress: 421 },
+        { class: '707', account: 'qp1140715', name: '潘品叡', password: 'HXskLx', chinese: 45, english: 78, math: 37, science: 51.5, social: 38, rank_school: 409, average: 50, total: 250, ranking: 28, prev_total: '一段無', progress: 250 },
+        { class: '707', account: 'qp1140716', name: '蘇宥鉦', password: 'Fc4Dij', chinese: 83, english: 49, math: 58, science: 91, social: 72, rank_school: 317, average: 71, total: 353, ranking: 23, prev_total: '一段無', progress: 353 },
+        { class: '707', account: 'qp1140721', name: '仲妍霏', password: 'u4Mnwj', chinese: 61, english: 25, math: 29, science: 56.5, social: 44, rank_school: 421, average: 43, total: 216, ranking: 30, prev_total: '一段無', progress: 216 },
+        { class: '707', account: 'qp1140722', name: '沈昕樂', password: 'y7AcEq', chinese: 92, english: 100, math: 87, science: 98, social: 86, rank_school: 52, average: 93, total: 463, ranking: 4, prev_total: '一段無', progress: 463 },
+        { class: '707', account: 'qp1140723', name: '林星吟', password: 'eTmoYX', chinese: 94, english: 92, math: 75, science: 95.5, social: 80, rank_school: 134, average: 87, total: 437, ranking: 8, prev_total: '一段無', progress: 437 },
+        { class: '707', account: 'qp1140724', name: '范佳萱', password: 'PlRuGp', chinese: 92, english: 99, math: 78, science: 100, social: 92, rank_school: 58, average: 92, total: 461, ranking: 6, prev_total: '一段無', progress: 461 },
+        { class: '707', account: 'qp1140725', name: '徐安葳', password: 'Tf6vCx', chinese: 92, english: 98, math: 93, science: 100, social: 82, rank_school: 44, average: 93, total: 465, ranking: 3, prev_total: '一段無', progress: 465 },
+        { class: '707', account: 'qp1140726', name: '浦文珏', password: 'GXfduG', chinese: 88, english: 100, math: 52, science: 97, social: 68, rank_school: 214, average: 81, total: 405, ranking: 16, prev_total: '一段無', progress: 405 },
+        { class: '707', account: 'qp1140727', name: '連雨婕', password: '7XTlxK', chinese: 85.5, english: 97, math: 86, science: 88.5, social: 66, rank_school: 165, average: 85, total: 423, ranking: 10, prev_total: '一段無', progress: 423 },
+        { class: '707', account: 'qp1140728', name: '陳星言', password: 'FUsLvz', chinese: 85.5, english: 86, math: 60, science: 100, social: 82, rank_school: 189, average: 83, total: 414, ranking: 14, prev_total: '一段無', progress: 414 },
+        { class: '707', account: 'qp1140729', name: '陳儀安', password: 'yGhcOS', chinese: 91, english: 79, math: 78, science: 97, social: 74, rank_school: 180, average: 84, total: 419, ranking: 13, prev_total: '一段無', progress: 419 },
+        { class: '707', account: 'qp1140730', name: '黃詠芊', password: 'zVyAY3', chinese: 83, english: 97, math: 78, science: 85, social: 78, rank_school: 173, average: 84, total: 421, ranking: 11, prev_total: '一段無', progress: 421 },
+        { class: '707', account: 'qp1140731', name: '萬珈寧', password: 'IULnEr', chinese: 84, english: 97, math: 66, science: 89.5, social: 58, rank_school: 238, average: 79, total: 395, ranking: 19, prev_total: '一段無', progress: 395 },
+        { class: '707', account: 'qp1140732', name: '褚維恩', password: 'nqPuGL', chinese: 73, english: 62, math: 43, science: 77.5, social: 56, rank_school: 362, average: 62, total: 312, ranking: 26, prev_total: '一段無', progress: 312 },
+        { class: '707', account: 'qp1140733', name: '劉雨緁', password: 'BpkGTO', chinese: 69, english: 95, math: 52, science: 69, social: 58, rank_school: 328, average: 69, total: 343, ranking: 25, prev_total: '一段無', progress: 343 },
+        { class: '707', account: 'qp1140734', name: '戴芙寧', password: 'WPbjNG', chinese: 92, english: 100, math: 86, science: 97, social: 92, rank_school: 35, average: 93, total: 467, ranking: 2, prev_total: '一段無', progress: 467 },
+        { class: '707', account: 'qp1140735', name: '薛尹柔', password: 'km8cuc', chinese: 88, english: 93, math: 65, science: 93.5, social: 70, rank_school: 204, average: 82, total: 410, ranking: 15, prev_total: '一段無', progress: 410 }
+    ];
+    // ==========================================================
+
+    const tableBody = document.getElementById('scoreTableBody');
+
+    /**
+     * 處理登入邏輯
+     */
+    function handleLogin() {
+        const usernameInput = document.getElementById('username').value.trim();
+        const passwordInput = document.getElementById('password').value.trim();
+        const message = document.getElementById('loginMessage');
+
+        // 查找匹配的使用者
+        const user = ALL_SCORES.find(score => 
+            score.account === usernameInput && score.password === passwordInput
+        );
+
+        if (user) {
+            // 登入成功
+            message.textContent = '';
+            
+            // 1. 顯示成績區塊，隱藏登入表單
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('scoreDisplay').style.display = 'block';
+
+            // 2. 顯示歡迎訊息
+            document.getElementById('welcomeMessage').textContent = `歡迎，${user.class}班 ${user.name} 同學！`;
+
+            // 3. 渲染個人資料 (將 user 物件放入陣列中以符合 renderTable 格式)
+            renderTable([user]);
+
+        } else {
+            // 登入失敗
+            message.textContent = '帳號或密碼錯誤，請重新輸入。';
+        }
+    }
+
+    /**
+     * 處理登出邏輯
+     */
+    function logout() {
+        if (confirm("確定要登出嗎？")) {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('scoreDisplay').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+    }
+
+    /**
+     * 渲染 HTML 表格 (只接受單一學生或多個學生的資料)
+     */
+    function renderTable(data) {
+        tableBody.innerHTML = ''; 
+
+        if (data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="15">查無您的成績資料。</td></tr>';
+            return;
+        }
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            const fields = ['class', 'account', 'name', 'password', 'chinese', 'english', 'math', 'science', 'social', 'rank_school', 'average', 'total', 'ranking', 'prev_total', 'progress'];
+
+            fields.forEach(field => {
+                const td = document.createElement('td');
+                let displayValue = row[field];
+                
+                // 處理密碼顯示 (登入後依然只顯示 ***)
+                if (field === 'password') {
+                    displayValue = '***'; 
+                    td.classList.add('sensitive-data');
+                }
+                
+                // 處理進步分數顏色 (確保 progress 是數字)
+                if (field === 'progress' && !isNaN(row.progress) && row.prev_total !== '一段無') {
+                    const progressValue = Number(row.progress);
+                    if (progressValue > 0) {
+                        td.classList.add('progress-up');
+                        displayValue = '+' + progressValue;
+                    } else if (progressValue < 0) {
+                        td.classList.add('progress-down');
+                    } else {
+                        displayValue = progressValue;
+                    }
+                }
+                
+                td.textContent = displayValue;
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // 頁面載入時，確保只顯示登入表單
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('scoreDisplay').style.display = 'none';
+    });
+</script>
+
+</body>
+</html>
